@@ -45,6 +45,7 @@ def validate_grammar(pos_tags):
         ['PRP', 'VBZ', 'NN'],  # Subject + Verb + Object (3rd person singular)
         ['PRP', 'VBZ', 'NNS'],
         ['PRP', 'VBZ', 'JJ'],  # Subject + Verb + Complement
+        ['DT', 'NN', 'VBZ'],
         ['DT', 'NN', 'VBZ', 'RB'],  # Article + Noun + Verb + Adverb
         ['PRP', 'MD', 'VB'],  # Subject + Modal Verb + Verb
     ]
@@ -76,10 +77,6 @@ def update_continuous(event=None):
     tokens = word_tokenize(english_text)
     pos_tags = pos_tag(tokens)
 
-    # Translate to Braille
-    braille_text = " ".join("".join(BRAILLE_MAP.get(char, "?") for char in word) for word in english_text.split())
-    braille_output.insert(tk.END, braille_text)
-
     # Token analysis
     valid_tokens = []
     invalid_tokens = []
@@ -89,8 +86,22 @@ def update_continuous(event=None):
         else:
             invalid_tokens.append(word)
 
+    # Display valid and invalid tokens
     token_output.insert(tk.END, "Valid Tokens:\n" + "\n".join(valid_tokens) + "\n\n")
     token_output.insert(tk.END, "Invalid Tokens:\n" + "\n".join(invalid_tokens))
+
+    # Check for grammar validity
+    if invalid_tokens:
+        braille_output.insert(tk.END, "Error: Invalid tokens detected. Braille translation aborted.")
+        return
+
+    if not validate_grammar(pos_tags):
+        braille_output.insert(tk.END, "Grammar Error: Invalid sentence structure. Braille translation aborted.")
+        return
+
+    # Translate to Braille if no errors
+    braille_text = " ".join("".join(BRAILLE_MAP.get(char, "?") for char in word) for word in english_text.split())
+    braille_output.insert(tk.END, braille_text)
 
 # Generate parse tree on Enter key
 def generate_parse_tree(event=None):
